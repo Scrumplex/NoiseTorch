@@ -186,6 +186,16 @@ func paConnectionWatchdog(ctx *ntcontext) {
 			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
+		info, err := paClient.ServerInfo()
+		if err != nil {
+			log.Printf("Couldn't fetch pulse server info: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Couldn't fetch pulse server info: %v\n", err)
+		}
+
+		ctx.isPipewire = strings.Contains(info.PackageName, "PipeWire")
+
+		log.Printf("Connected to audio server. Is pipewire? %t\n", ctx.isPipewire)
+
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(ctx)
 

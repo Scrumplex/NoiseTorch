@@ -33,6 +33,7 @@ type ntcontext struct {
 	haveCapabilities         bool
 	capsMismatch             bool
 	views                    *ViewStack
+	isPipewire               bool
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -82,6 +83,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		w.LabelColored("NoiseTorch inactive", "RC", red)
 	} else if ctx.noiseSupressorState == inconsistent {
 		w.LabelColored("Inconsistent state, please unload first.", "RC", orange)
+	}
+
+	if ctx.isPipewire {
+		w.Row(20).Dynamic(1)
+		w.Label("Running in PipeWire mode. PipeWire support is currently alpha quality. Please report bugs.", "LC")
 	}
 
 	if ctx.update.available && !ctx.update.triggered {
