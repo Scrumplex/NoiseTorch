@@ -39,56 +39,74 @@ func supressorState(ctx *ntcontext) int {
 	c := ctx.paClient
 	var inpLoaded, outLoaded, inputInc, outputInc bool
 	if ctx.config.FilterInput {
-		_, nullsink, err := findModule(c, "module-null-sink", "sink_name=nui_mic_denoised_out")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for module-null-sink: %v\n", err)
-		}
-		_, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for module-ladspa-sink: %v\n", err)
-		}
-		_, loopback, err := findModule(c, "module-loopback", "sink=nui_mic_raw_in")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for module-loopback: %v\n", err)
-		}
-		_, remap, err := findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for module-remap-source: %v\n", err)
-		}
+		if ctx.isPipewire {
+			_, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='NoiseTorch Microphone'")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for module-ladspa-source: %v\n", err)
+			}
+			inpLoaded = ladspasource
+			inputInc = false
+		} else {
+			_, nullsink, err := findModule(c, "module-null-sink", "sink_name=nui_mic_denoised_out")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for module-null-sink: %v\n", err)
+			}
+			_, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for module-ladspa-sink: %v\n", err)
+			}
+			_, loopback, err := findModule(c, "module-loopback", "sink=nui_mic_raw_in")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for module-loopback: %v\n", err)
+			}
+			_, remap, err := findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for module-remap-source: %v\n", err)
+			}
 
-		if nullsink && ladspasink && loopback && remap {
-			inpLoaded = true
-		} else if nullsink || ladspasink || loopback || remap {
-			inputInc = true
+			if nullsink && ladspasink && loopback && remap {
+				inpLoaded = true
+			} else if nullsink || ladspasink || loopback || remap {
+				inputInc = true
+			}
 		}
 	} else {
 		inpLoaded = true
 	}
 
 	if ctx.config.FilterOutput {
-		_, out, err := findModule(c, "module-null-sink", "sink_name=nui_out_out_sink")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
-		}
-		_, lad, err := findModule(c, "module-ladspa-sink", "sink_name=nui_out_ladspa")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
-		}
-		_, loop, err := findModule(c, "module-loopback", "source=nui_out_out_sink.monitor")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
-		}
-		_, outin, err := findModule(c, "module-null-sink", "sink_name=nui_out_in_sink")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
-		}
-		_, loop2, err := findModule(c, "module-loopback", "source=nui_out_in_sink.monitor")
-		if err != nil {
-			log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
-		}
+		if ctx.isPipewire {
+			_, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='NoiseTorch Headphones'")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for module-ladspa-sink: %v\n", err)
+			}
+			outLoaded = ladspasink
+			outputInc = false
+		} else {
+			_, out, err := findModule(c, "module-null-sink", "sink_name=nui_out_out_sink")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
+			}
+			_, lad, err := findModule(c, "module-ladspa-sink", "sink_name=nui_out_ladspa")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
+			}
+			_, loop, err := findModule(c, "module-loopback", "source=nui_out_out_sink.monitor")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
+			}
+			_, outin, err := findModule(c, "module-null-sink", "sink_name=nui_out_in_sink")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
+			}
+			_, loop2, err := findModule(c, "module-loopback", "source=nui_out_in_sink.monitor")
+			if err != nil {
+				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
+			}
 
-		outLoaded = out && lad && loop && outin && loop2
-		outputInc = out || lad || loop || outin || loop2
+			outLoaded = out && lad && loop && outin && loop2
+			outputInc = out || lad || loop || outin || loop2
+		}
 	} else {
 		outLoaded = true
 	}
@@ -264,7 +282,41 @@ func loadPulseOutput(ctx *ntcontext, out *device) error {
 }
 
 func unloadSupressor(ctx *ntcontext) error {
-	log.Printf("Unloading pulseaudio modules\n")
+	if ctx.isPipewire {
+		return unloadSupressorPipeWire(ctx)
+	} else {
+		return unloadSupressorPulse(ctx)
+	}
+}
+
+func unloadSupressorPipeWire(ctx *ntcontext) error {
+	log.Printf("Unloading modules for pipewire\n")
+
+	log.Printf("Searching for module-ladspa-source\n")
+	c := ctx.paClient
+	m, found, err := findModule(c, "module-ladspa-source", "source_name='NoiseTorch Microphone'")
+	if err != nil {
+		return err
+	}
+	if found {
+		log.Printf("Found module-ladspa-source at id [%d], sending unload command\n", m.Index)
+		c.UnloadModule(m.Index)
+	}
+
+	log.Printf("Searching for module-ladspa-sink\n")
+	m, found, err = findModule(c, "module-ladspa-sink", "sink_name='NoiseTorch Headphones'")
+	if err != nil {
+		return err
+	}
+	if found {
+		log.Printf("Found module-ladspa-sink at id [%d], sending unload command\n", m.Index)
+		c.UnloadModule(m.Index)
+	}
+	return nil
+}
+
+func unloadSupressorPulse(ctx *ntcontext) error {
+	log.Printf("Unloading modules for pulseaudio\n")
 
 	if pid, err := getPulsePid(); err == nil {
 		if lim, err := getRlimit(pid); err == nil {
@@ -374,6 +426,7 @@ func unloadSupressor(ctx *ntcontext) error {
 // Finds a module by exactly matching the module name, and checking if the second string is a substring of the argument
 func findModule(c *pulseaudio.Client, name string, argMatch string) (module pulseaudio.Module, found bool, err error) {
 	lst, err := c.ModuleList()
+
 	if err != nil {
 		return pulseaudio.Module{}, false, err
 	}
