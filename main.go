@@ -119,11 +119,9 @@ func getSources(client *pulseaudio.Client) []device {
 
 	outputs := make([]device, 0)
 	for i := range sources {
-		if strings.Contains(sources[i].Name, "nui_") {
+		if strings.Contains(sources[i].Name, "nui_") || strings.Contains(sources[i].Name, "NoiseTorch") {
 			continue
 		}
-
-		log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
 
 		var inp device
 
@@ -149,7 +147,7 @@ func getSinks(client *pulseaudio.Client) []device {
 
 	inputs := make([]device, 0)
 	for i := range sources {
-		if strings.Contains(sources[i].Name, "nui_") {
+		if strings.Contains(sources[i].Name, "nui_") || strings.Contains(sources[i].Name, "NoiseTorch") {
 			continue
 		}
 
